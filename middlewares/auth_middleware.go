@@ -25,7 +25,7 @@ func RequiredAuth() gin.HandlerFunc {
 		})
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			context.Set("userID", int(claims["sub"].(float64)))
+			context.Set("userID", uint(claims["sub"].(float64)))
 			context.Next()
 		} else {
 			context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{

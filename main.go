@@ -23,11 +23,10 @@ func main() {
 	// Route
 	api:= server.Group("/api")
 	{
-		api.POST("/events", controllers.CreateEvent)
+		
 		api.GET("/events", controllers.GetEvents)
 		api.GET("/events/:id", controllers.GetEventbyId)
-		api.PUT("/events/:id", controllers.UpdateEvent)
-		api.DELETE("/events/:id", controllers.DeleteEvent)
+		
 
 		api.POST("/auth/register", controllers.RegisterUser)
 		api.POST("/auth/login", controllers.LoginUser)
@@ -36,6 +35,10 @@ func main() {
 		protected.Use(middlewares.RequiredAuth())
 		{
 			protected.GET("/auth/me", controllers.GetCurrentUser)
+
+			protected.POST("/events", controllers.CreateEvent)
+			protected.PUT("/events/:id", controllers.UpdateEvent)
+			protected.DELETE("/events/:id", controllers.DeleteEvent)
 		}
 	}
 

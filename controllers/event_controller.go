@@ -9,6 +9,8 @@ import (
 )
 
 func CreateEvent(context *gin.Context) {
+	userID, _ := context.Get("userID")
+
 	var event models.Event
 	err := context.ShouldBindJSON(&event);
 	if err != nil {
@@ -18,7 +20,7 @@ func CreateEvent(context *gin.Context) {
 		return
 	}
 
-	event.UserID = 1
+	event.UserID = userID.(uint)
 	
 	config.DB.Create(&event)
 	context.JSON(http.StatusCreated, gin.H{
@@ -56,6 +58,8 @@ func GetEventbyId(context *gin.Context) {
 }
 
 func UpdateEvent(context *gin.Context) {
+	userID, _ := context.Get("userID")
+
 	var event models.Event
 	paramsId := context.Param("id")
 
@@ -63,6 +67,13 @@ func UpdateEvent(context *gin.Context) {
 	if eventData != nil {
 		context.JSON(http.StatusNotFound, gin.H{
 			"error": "Event data not found",
+		})
+		return
+	}
+
+	if event.UserID != userID.(uint) {
+		context.JSON(http.StatusForbidden, gin.H{
+			"error": "You are not the owner of this event",
 		})
 		return
 	}
@@ -84,6 +95,8 @@ func UpdateEvent(context *gin.Context) {
 }
 
 func DeleteEvent(context *gin.Context) {
+	userID, _ := context.Get("userID")
+
 	var event models.Event
 	paramsId := context.Param("id")
 
@@ -91,6 +104,13 @@ func DeleteEvent(context *gin.Context) {
 	if eventData != nil {
 		context.JSON(http.StatusNotFound, gin.H{
 			"error": "Event data not found",
+		})
+		return
+	}
+
+	if event.UserID != userID.(uint) {
+		context.JSON(http.StatusForbidden, gin.H{
+			"error": "You are not the owner of this event",
 		})
 		return
 	}
