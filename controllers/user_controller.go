@@ -136,7 +136,7 @@ func GetCurrentUser(context *gin.Context) {
 	}
 
 	var user models.User
-	userData := config.DB.Select("id", "name", "email", "events").First(&user, userID).Error
+	userData := config.DB.Select("id", "name", "email").First(&user, userID).Error
 	if userData != nil {
 		context.JSON(http.StatusNotFound, gin.H{
 			"error": "User not found",
@@ -145,6 +145,11 @@ func GetCurrentUser(context *gin.Context) {
 	}
 
 	context.JSON(http.StatusOK, gin.H{
-		"user": user,
+		"user": gin.H{
+			"id": user.ID,
+			"name": user.Name,
+			"email": user.Email,
+			"events": user.Events,
+		},
 	})
 }
