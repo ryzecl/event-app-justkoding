@@ -17,6 +17,7 @@ func main() {
 	}
 
 	config.ConnectDB()
+	config.InitImageKit()
 
 	server := gin.Default()
 

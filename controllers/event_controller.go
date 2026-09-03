@@ -2,22 +2,39 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
-	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"example.com/event-app/config"
 	"example.com/event-app/models"
 	"github.com/gin-gonic/gin"
 	"github.com/imagekit-developer/imagekit-go/v2"
-	"github.com/imagekit-developer/imagekit-go/v2/option"
 )
 
-func initImageKit() *imagekit.Client {
-	client := imagekit.NewClient(
-		option.WithPrivateKey(os.Getenv("IMAGEKIT_PRIVATE_KEY")),
-	)
-	return &client
+func validateImage(headerFilename string, size int64) error {
+	// Maksimal 2MB
+	const maxSize = 2 * 1024 * 1024
+	if size > maxSize {
+		return fmt.Errorf("file size exceeds 2MB limit")
+	}
+
+	// Cek ekstensi file
+	ext := strings.ToLower(filepath.Ext(headerFilename))
+	allowedExts := map[string]bool {
+		".jpg": true,
+		".jpeg": true,
+		".png": true,
+		".webp": true,
+	}
+
+	if !allowedExts[ext] {
+		return fmt.Errorf("only .jpg, .jpeg, .png, and .webp files are allowed")
+	}
+
+	return nil
 }
 
 func CreateEvent(c *gin.Context) {
@@ -33,12 +50,18 @@ func CreateEvent(c *gin.Context) {
 	}
 	defer file.Close()
 
-	// 1. Upload file to ImageKit
-	fileName := header.Filename
-	ik := initImageKit()
-	uploadRes, errUpload := ik.Files.Upload(context.Background(), imagekit.FileUploadParams{
+	// validasi sebelum upload
+	if errVal := validateImage(header.Filename, header.Size); errVal != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": errVal.Error(),
+		})
+		return
+	}
+
+	// Upload file to ImageKit
+	uploadRes, errUpload := config.IK.Files.Upload(context.Background(), imagekit.FileUploadParams{
 		File: file,
-		FileName: fileName,
+		FileName: header.Filename,
 	})
 
 	if errUpload != nil {
@@ -48,7 +71,13 @@ func CreateEvent(c *gin.Context) {
 		return
 	}
 
-	parsedTime, _ := time.Parse(time.RFC3339, c.PostForm("datetime"))
+	parsedTime, errTime := time.Parse(time.RFC3339, c.PostForm("datetime"))
+	if errTime != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid datetime format (use RFC3339, e.g. 2026-09-04T10:00:00Z)",
+		})
+		return
+	}
 
 	// Simpan ke database
 	event := models.Event {
@@ -61,7 +90,14 @@ func CreateEvent(c *gin.Context) {
 		UserID: userID.(uint),
 	}
 
-	config.DB.Create(&event)
+	if errDB := config.DB.Create(&event).Error; errDB != nil {
+		config.IK.Files.Delete(context.Background(), uploadRes.FileID)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to save event",
+		})
+		return
+	}
+
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Data created successfully",
 		"event": event,
@@ -121,19 +157,24 @@ func UpdateEvent(c *gin.Context) {
 	if err == nil {
 		defer file.Close();
 
-		ik := initImageKit()
+		// Validasi
+		if errVal := validateImage(header.Filename, header.Size); errVal != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": errVal.Error(),
+			})
+			return
+		}
 
 		// Upload file new Image
-		fileName := header.Filename
-		uploadRes, errUpload := ik.Files.Upload(context.Background(), imagekit.FileUploadParams{
+		uploadRes, errUpload := config.IK.Files.Upload(context.Background(), imagekit.FileUploadParams{
 			File: file,
-			FileName: fileName,
+			FileName: header.Filename,
 		})
 
 		if errUpload == nil {
 			// Hapus old image
 			if event.ImageID != "" {
-				ik.Files.Delete(context.Background(), event.ImageID)
+				config.IK.Files.Delete(context.Background(), event.ImageID)
 			}
 
 			// Upload new image
@@ -188,8 +229,7 @@ func DeleteEvent(c *gin.Context) {
 	}
 
 	if event.ImageID != "" {
-		ik:= initImageKit()
-		ik.Files.Delete(context.Background(), event.ImageID)
+		config.IK.Files.Delete(context.Background(), event.ImageID)
 	}
 
 	config.DB.Unscoped().Delete(&event)
