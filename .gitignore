@@ -1,0 +1,45 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+main
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE / VSCode / CLI
+*.out
+*.cover
+coverage.html
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+
+# Air / Live reload temporary folder
+tmp/
+
+# Logs
+*.log
+
+# Operating System files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+*.swp
+*.swo
+*~
