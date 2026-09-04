@@ -172,6 +172,8 @@ func GetEventbyId(context *gin.Context) {
 
 	var eventData = config.DB.Preload("User", func(db *gorm.DB) *gorm.DB {
 		return db.Select("id", "name", "email")
+	}).Preload("Booking").Preload("Booking.User", func(db *gorm.DB) *gorm.DB {
+		return db.Select("id", "name", "email")
 	}).First(&event, paramsId).Error;
 	if eventData != nil {
 		context.JSON(http.StatusNotFound, gin.H{
@@ -193,7 +195,7 @@ func GetEventByUser(c *gin.Context) {
 
 	errEvent := config.DB.Preload("User", func(db *gorm.DB) *gorm.DB {
 		return db.Select("id", "name", "email")
-	}).Where("user_id", userID).Find(&events).Error
+	}).Where("user_id = ?", userID).Find(&events).Error
 
 	if errEvent != nil {
 		c.JSON(http.StatusNotFound, gin.H{

@@ -8,6 +8,7 @@ import (
 	"example.com/event-app/config"
 	"example.com/event-app/models"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type BookingInput struct {
@@ -68,5 +69,52 @@ func CreateBookinEvent(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Registered event successfully",
+	})
+}
+
+func GetBookingbyUser(c *gin.Context) {
+	var booking []models.Booking
+	userID, _ := c.Get("userID")
+
+	errBookingData := config.DB.Preload("Event").Preload("Event.User", func(db *gorm.DB) *gorm.DB {
+		return db.Select("id", "name", "email")
+	}).Where("user_id = ?", userID).Find(&booking).Error
+	if errBookingData != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Event not found",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"booking": booking,
+	})
+}
+
+func DeleteBooking (c *gin.Context) {
+	userID, _ := c.Get("userID")
+	var booking models.Booking
+
+	paramsId := c.Param("id")
+
+	bookingData := config.DB.First(&booking, paramsId).Error
+
+	if bookingData != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Event not found",
+		})
+		return
+	}
+
+	if booking.UserID != userID.(uint) {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "You're not allowed delete others booked",
+		})
+		return
+	}
+
+	config.DB.Unscoped().Delete(&booking)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Booking event deleted successfully",
 	})
 }
