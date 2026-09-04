@@ -28,7 +28,6 @@ func main() {
 		api.GET("/events", controllers.GetEvents)
 		api.GET("/events/:id", controllers.GetEventbyId)
 		
-
 		api.POST("/auth/register", controllers.RegisterUser)
 		api.POST("/auth/login", controllers.LoginUser)
 
@@ -36,6 +35,7 @@ func main() {
 		protected.Use(middlewares.RequiredAuth())
 		{
 			protected.GET("/auth/me", controllers.GetCurrentUser)
+			protected.GET("/events/user", controllers.GetEventByUser)
 
 			protected.POST("/events", controllers.CreateEvent)
 			protected.PUT("/events/:id", controllers.UpdateEvent)

@@ -35,6 +35,15 @@ func RegisterUser(context *gin.Context) {
 		return
 	}
 
+	// Check if email already registered
+	var existingUser models.User
+	if err := config.DB.Where("email = ?", input.Email).First(&existingUser).Error; err == nil {
+		context.JSON(http.StatusBadRequest, gin.H{
+			"error": "Email already registered",
+		})
+		return
+	}
+
 	// Hash Password
 	hashedPassword, errHash := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if errHash != nil {
@@ -46,15 +55,15 @@ func RegisterUser(context *gin.Context) {
 
 	// Create User
 	user := models.User{
-		Name: input.Name,
-		Email: input.Email,
+		Name:     input.Name,
+		Email:    input.Email,
 		Password: string(hashedPassword),
 	}
 	
 	userCreated := config.DB.Create(&user).Error
 	if userCreated != nil {
-		context.JSON(http.StatusBadRequest, gin.H{
-			"error": "Email already registered",
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to register user",
 		})
 		return
 	}
