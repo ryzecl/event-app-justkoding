@@ -6,6 +6,7 @@ import (
 	"example.com/event-app/config"
 	"example.com/event-app/controllers"
 	"example.com/event-app/middlewares"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -20,6 +21,7 @@ func main() {
 	config.InitImageKit()
 
 	server := gin.Default()
+	server.Use(cors.Default())
 
 	// Route
 	api:= server.Group("/api")
