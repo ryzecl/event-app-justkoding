@@ -19,9 +19,9 @@ import (
 
 func validateImage(headerFilename string, size int64) error {
 	// Maksimal 2MB
-	const maxSize = 2 * 1024 * 1024
+	const maxSize = 10 * 1024 * 1024
 	if size > maxSize {
-		return fmt.Errorf("file size exceeds 2MB limit")
+		return fmt.Errorf("file size exceeds 10MB limit")
 	}
 
 	// Cek ekstensi file

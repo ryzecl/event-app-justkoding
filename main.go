@@ -40,6 +40,8 @@ func main() {
 			protected.POST("/events", controllers.CreateEvent)
 			protected.PUT("/events/:id", controllers.UpdateEvent)
 			protected.DELETE("/events/:id", controllers.DeleteEvent)
+
+			protected.POST("/booking", controllers.CreateBookinEvent)
 		}
 	}
 

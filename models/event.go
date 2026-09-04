@@ -13,7 +13,7 @@ type Event struct {
     Location    string    `json:"location" binding:"required"`
 	Image string   `json:"image"`
 	ImageID string `json:"imageId"`
-	UserID uint `json:"userid"`
+	UserID uint `json:"userId"`
 	User User `gorm:"foreignKey:UserID" json:"user"`
 	Datetime time.Time `json:"datetime" binding:"required"`
 }
